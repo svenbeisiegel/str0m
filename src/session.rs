@@ -41,9 +41,8 @@ use crate::util::{Soonest, SystemTimeExt, already_happened, not_happening};
 use crate::{Reason, net};
 use crate::{RtcConfig, RtcError};
 
-/// Minimum time we delay between sending nacks. This should be
-/// set high enough to not cause additional problems in very bad
-/// network conditions.
+/// Minimum interval between NACK polls. Per-packet retries also wait for RTT.
+/// Keep this high enough to avoid additional problems in very bad network conditions.
 const NACK_MIN_INTERVAL: Duration = Duration::from_millis(33);
 
 /// Delay between reports of TWCC. This is deliberately very low.
@@ -918,6 +917,11 @@ impl Session {
                 continue;
             }
 
+            if let RtcpFb::DlrrItem(dlrr) = fb {
+                self.streams.handle_dlrr(now, dlrr);
+                continue;
+            }
+
             if fb.is_for_rx() {
                 let Some(stream) = self.streams.stream_rx(&fb.ssrc()) else {
                     continue;
@@ -1277,7 +1281,9 @@ impl Session {
         self.streams.paused_at()
     }
 
-    fn nack_at(&mut self) -> Option<Instant> {
+    fn nack_at(&self) -> Option<Instant> {
+        // Paused streams stop counting as NACK-enabled once their pending retries finish,
+        // so an idle session doesn't wake every NACK_MIN_INTERVAL for as long as it lives.
         if !self.streams.any_nack_enabled() {
             return None;
         }
