@@ -666,6 +666,8 @@ impl StreamTx {
         let header_len = header.write_to(buf, exts);
         assert!(header_len % 4 == 0, "RTP header must be multiple of 4");
         header.header_len = header_len;
+        // write_to leaves out an extension block without values.
+        header.has_extension = buf[0] & (1 << 4) != 0;
 
         let mut body_out = &mut buf[header_len..];
 

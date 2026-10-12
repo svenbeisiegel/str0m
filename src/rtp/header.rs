@@ -72,6 +72,14 @@ impl RtpHeader {
             }
         }
 
+        if ext_len == 0 {
+            // No extension value to send: no extension block either. An empty
+            // one (0xBEDE, length 0) is valid RTP, but some receivers drop such
+            // packets, e.g. the Mitel MBG when no a=extmap was negotiated.
+            buf[0] &= !(1 << 4);
+            return ext_start;
+        }
+
         let bede_len = (ext_len / 4) as u16;
         buf[ext_start + 2..ext_start + 4].copy_from_slice(&bede_len.to_be_bytes());
 
@@ -488,6 +496,34 @@ mod test {
         assert_eq!(&buf1, p1);
         assert_eq!(&buf2, p2);
         assert_eq!(&buf3, p3);
+    }
+
+    #[test]
+    fn test_write_rtp_header_without_extension_values() {
+        // A value (mid) the map has no id for: nothing to write, so no
+        // extension block and no X bit.
+        let header = RtpHeader {
+            payload_type: 8.into(),
+            sequence_number: 1,
+            timestamp: 160,
+            ssrc: 44.into(),
+            ext_vals: ExtensionValues {
+                mid: Some("a".into()),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let mut buf = vec![0; DATAGRAM_MAX_PACKET_SIZE];
+        let n = header.write_to(&mut buf[..], &ExtensionMap::empty());
+        assert_eq!(&buf[..n], &[128, 8, 0, 1, 0, 0, 0, 160, 0, 0, 0, 44]);
+
+        // With an id for it, the block is written.
+        let mut exts = ExtensionMap::empty();
+        exts.set(4, Extension::RtpMid);
+        let n = header.write_to(&mut buf[..], &exts);
+        assert_eq!(buf[0], 144);
+        assert_eq!(&buf[12..14], &[0xBE, 0xDE]);
+        assert_eq!(n, 20);
     }
 
     #[test]
