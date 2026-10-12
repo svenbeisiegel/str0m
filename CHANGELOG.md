@@ -1,5 +1,7 @@
 # Unreleased
 
+  * Verify the remote DTLS fingerprint with the hash function the remote SDP names (`sha-1` or `sha-256`, case-insensitive) instead of always sha-256
+
 # 0.24.1
 
   * Make the SCTP send buffer limit configurable and fix polling stack overflow #1062
