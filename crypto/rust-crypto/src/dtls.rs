@@ -17,13 +17,7 @@ pub(super) struct RustCryptoDtlsProvider;
 
 impl DtlsProvider for RustCryptoDtlsProvider {
     fn generate_certificate(&self) -> Option<DtlsCert> {
-        // Use dimpl's rcgen-based certificate generation (with RustCrypto backend)
-        dimpl::certificate::generate_self_signed_certificate()
-            .ok()
-            .map(|cert| DtlsCert {
-                certificate: cert.certificate,
-                private_key: cert.private_key,
-            })
+        crate::certificate::generate()
     }
 
     fn new_dtls(

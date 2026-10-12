@@ -13,12 +13,15 @@ rust-version = "1.85.0"
 
 [dependencies]
 str0m-proto = { workspace = true, features = ["dtls"] }
-dimpl = { workspace = true, features = ["rust-crypto", "rcgen"] }
+# No "rcgen": it generates certificates with aws-lc-rs (C code); see certificate.rs.
+dimpl = { workspace = true, features = ["rust-crypto"] }
 time.workspace = true
 hmac.workspace = true
 aes-gcm.workspace = true
 aes.workspace = true
 ctr.workspace = true
-p256.workspace = true
+p256 = { workspace = true, features = ["ecdsa", "pkcs8", "sha256"] }
+rand_core = { workspace = true, features = ["getrandom"] }
+x509-cert = { workspace = true, features = ["builder"] }
 sha1.workspace = true
-sha2.workspace = true
+sha2 = { workspace = true, features = ["oid"] }

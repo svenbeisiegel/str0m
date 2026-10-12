@@ -1,5 +1,6 @@
 # Unreleased
 
+  * rust-crypto: generate the DTLS certificate with RustCrypto (p256, x509-cert) instead of dimpl's rcgen, which pulls in aws-lc-rs
   * Verify the remote DTLS fingerprint with the hash function the remote SDP names (`sha-1` or `sha-256`, case-insensitive) instead of always sha-256
   * Prevent accumulated rounding error in TWCC receive timing #1071
   * Pace per-packet NACK retries by receive-side RTT and fix DLRR RTT routing #1070
