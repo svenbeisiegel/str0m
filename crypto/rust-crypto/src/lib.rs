@@ -1,6 +1,7 @@
 //! RustCrypto implementation of cryptographic functions.
 //! DTLS via dimpl with RustCrypto as crypto backend.
 
+mod certificate;
 mod dtls;
 mod sha1;
 mod sha256;
