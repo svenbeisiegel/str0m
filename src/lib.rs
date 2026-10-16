@@ -906,6 +906,7 @@ pub struct Rtc {
     ice: IceAgent,
     dtls: Dtls,
     dtls_connected: bool,
+    srtp_profile: Option<crypto::dtls::SrtpProfile>,
     dtls_buf: Vec<u8>,
     next_dtls_timeout: Option<Instant>,
     sctp: RtcSctp,
@@ -1277,6 +1278,7 @@ impl Rtc {
             )
             .expect("DTLS to init without problem"),
             dtls_connected: false,
+            srtp_profile: None,
             dtls_buf: vec![0; 2000],
             next_dtls_timeout: None,
             session,
@@ -1400,6 +1402,12 @@ impl Rtc {
     /// This tests if we have ICE connection, DTLS and the SRTP crypto derived contexts are up.
     pub fn is_connected(&self) -> bool {
         self.ice.state().is_connected() && self.dtls_connected && self.session.is_connected()
+    }
+
+    /// The SRTP protection profile the DTLS handshake negotiated, once the
+    /// SRTP keys are in place.
+    pub fn srtp_profile(&self) -> Option<crypto::dtls::SrtpProfile> {
+        self.srtp_profile
     }
 
     /// Make changes to the Rtc session via SDP.
@@ -1664,6 +1672,7 @@ impl Rtc {
                     let km_bytes = km.as_ref().to_vec();
                     debug!("DTLS set SRTP keying material and profile: {}", profile);
                     let active = self.dtls.is_active().expect("DTLS must be inited by now");
+                    self.srtp_profile = Some(profile);
                     self.session.set_keying_material(
                         KeyingMaterial::new(&km_bytes),
                         &self.crypto_provider,
